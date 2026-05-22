@@ -14,10 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { analysisSchema, type AnalysisFormData } from "@/lib/validations";
-import { AlertTriangle, Link2, MessageSquare, Search, Info } from "lucide-react";
+import { AlertTriangle, Link2, MessageSquare, Search, Info, Building2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageUpload } from "./ImageUpload";
+import { BusinessModeSelector } from "./BusinessModeSelector";
+import { UsageIndicator } from "@/components/plan/UsageIndicator";
+import type { BusinessScamType } from "@/types/analysis";
 
 const EXAMPLE_MESSAGES = [
   "Seu acesso ao banco foi bloqueado. Atualize seus dados imediatamente em http://banco-seguro-validacao.com",
@@ -31,8 +34,14 @@ interface RiskAnalyzerFormProps {
   isLoading: boolean;
 }
 
+type AnalysisMode = "personal" | "business";
+
 export function RiskAnalyzerForm({ onSubmit, isLoading }: RiskAnalyzerFormProps) {
   const [source, setSource] = useState<string | null>(null);
+  const [mode, setMode] = useState<AnalysisMode>("personal");
+  const [businessScamType, setBusinessScamType] = useState<BusinessScamType | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageMimeType, setImageMimeType] = useState<string | null>(null);
 
   const {
     register,
@@ -42,6 +51,7 @@ export function RiskAnalyzerForm({ onSubmit, isLoading }: RiskAnalyzerFormProps)
     formState: { errors },
   } = useForm<AnalysisFormData>({
     resolver: zodResolver(analysisSchema),
+    defaultValues: { analysisType: "personal" as const },
   });
 
   const messageValue = watch("message") || "";
@@ -51,12 +61,89 @@ export function RiskAnalyzerForm({ onSubmit, isLoading }: RiskAnalyzerFormProps)
     setValue("message", msg, { shouldValidate: true });
   };
 
+  const handleModeChange = (m: AnalysisMode) => {
+    setMode(m);
+    setValue("analysisType", m);
+    if (m === "personal") {
+      setBusinessScamType(null);
+      setValue("businessScamType", undefined);
+    }
+  };
+
+  const handleImageChange = (base64: string, mimeType: string) => {
+    setImageBase64(base64);
+    setImageMimeType(mimeType);
+    setValue("imageBase64", base64);
+    setValue("imageMimeType", mimeType as AnalysisFormData["imageMimeType"]);
+  };
+
+  const handleImageClear = () => {
+    setImageBase64(null);
+    setImageMimeType(null);
+    setValue("imageBase64", undefined);
+    setValue("imageMimeType", undefined);
+  };
+
   const handleFormSubmit = (data: AnalysisFormData) => {
-    onSubmit({ ...data, source: (source || undefined) as AnalysisFormData["source"] });
+    onSubmit({
+      ...data,
+      source: (source || undefined) as AnalysisFormData["source"],
+      analysisType: mode,
+      businessScamType: (businessScamType || undefined) as AnalysisFormData["businessScamType"],
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+      {/* Usage indicator */}
+      <div className="flex justify-end">
+        <UsageIndicator />
+      </div>
+
+      {/* Analysis mode toggle */}
+      <div className="flex rounded-xl border border-gray-200 p-1 gap-1 bg-gray-50">
+        <button
+          type="button"
+          onClick={() => handleModeChange("personal")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            mode === "personal"
+              ? "bg-white text-blue-700 shadow-sm border border-blue-100"
+              : "text-gray-500 hover:text-gray-700"
+          )}
+        >
+          <User className="h-4 w-4" />
+          Pessoal
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeChange("business")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            mode === "business"
+              ? "bg-white text-blue-700 shadow-sm border border-blue-100"
+              : "text-gray-500 hover:text-gray-700"
+          )}
+        >
+          <Building2 className="h-4 w-4" />
+          Empresa
+        </button>
+      </div>
+
+      {/* Business scam type selector */}
+      {mode === "business" && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+          <BusinessModeSelector
+            selected={businessScamType}
+            onChange={(t) => {
+              setBusinessScamType(t);
+              setValue("businessScamType", (t || undefined) as AnalysisFormData["businessScamType"]);
+            }}
+            disabled={isLoading}
+          />
+        </div>
+      )}
+
       {/* Security warning */}
       <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
         <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -66,16 +153,35 @@ export function RiskAnalyzerForm({ onSubmit, isLoading }: RiskAnalyzerFormProps)
         </p>
       </div>
 
+      {/* Image upload */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2 text-sm font-medium">
+          Imagem/Print suspeito
+          <span className="text-gray-400 font-normal">(opcional)</span>
+        </Label>
+        <ImageUpload
+          onImageChange={handleImageChange}
+          onImageClear={handleImageClear}
+          disabled={isLoading}
+        />
+        {imageBase64 && (
+          <p className="text-xs text-blue-600">
+            O texto da imagem será extraído automaticamente pela IA.
+          </p>
+        )}
+      </div>
+
       {/* Message field */}
       <div className="space-y-2">
         <Label htmlFor="message" className="flex items-center gap-2 text-sm font-medium">
           <MessageSquare className="h-4 w-4 text-blue-600" />
           Mensagem suspeita
+          <span className="text-gray-400 font-normal">(opcional se enviar imagem)</span>
         </Label>
         <Textarea
           id="message"
           placeholder="Cole aqui a mensagem suspeita que você recebeu por WhatsApp, SMS, e-mail, etc..."
-          className={cn("min-h-[140px] resize-y text-sm", errors.message && "border-red-400")}
+          className={cn("min-h-[120px] resize-y text-sm", errors.message && "border-red-400")}
           {...register("message")}
           disabled={isLoading}
         />
@@ -106,9 +212,7 @@ export function RiskAnalyzerForm({ onSubmit, isLoading }: RiskAnalyzerFormProps)
           {...register("url")}
           disabled={isLoading}
         />
-        {errors.url && (
-          <p className="text-xs text-red-500">{errors.url.message}</p>
-        )}
+        {errors.url && <p className="text-xs text-red-500">{errors.url.message}</p>}
       </div>
 
       {/* Context and Source */}

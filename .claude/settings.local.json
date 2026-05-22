@@ -7,7 +7,8 @@
       "Bash(npx shadcn@latest add badge card input label select textarea toast progress separator tabs)",
       "Bash(npx shadcn@latest add badge card input label select textarea sonner progress separator tabs dialog)",
       "Bash(npm run *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(npm test *)"
     ]
   }
 }
