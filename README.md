@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ScamShield — Detector Inteligente de Golpes Digitais
 
-## Getting Started
+Aplicação web que usa inteligência artificial (Google Gemini) para detectar golpes digitais, phishing, engenharia social e fraudes financeiras a partir de mensagens, links e descrições de situações suspeitas.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** com App Router
+- **TypeScript**
+- **Tailwind CSS**
+- **Shadcn UI**
+- **Supabase** (autenticação + banco de dados)
+- **Google Gemini API** (análise inteligente)
+- **Zod** (validação)
+- **React Hook Form**
+- **Lucide React** (ícones)
+- **Sonner** (notificações)
+
+## Funcionalidades
+
+- Análise de mensagens, links e contextos suspeitos via IA
+- Score de risco de 0 a 100 com nível (Baixo risco / Atenção / Alto risco / Golpe provável)
+- Explicação em linguagem simples
+- Lista de sinais de alerta (red flags)
+- Orientações do que fazer e não fazer
+- Sugestão de resposta segura
+- Histórico de análises (usuários autenticados)
+- Exemplos educativos de golpes comuns
+- Guia "O que fazer se caí em golpe"
+- Rate limiting básico por IP
+- Autenticação com Supabase (e-mail e senha)
+
+## Instalação
+
+### 1. Clone e instale as dependências
+
+```bash
+npm install
+```
+
+### 2. Configure as variáveis de ambiente
+
+```bash
+cp .env.example .env.local
+```
+
+Edite o arquivo `.env.local`:
+
+```env
+# Supabase (obtenha em supabase.com)
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+SUPABASE_SERVICE_ROLE_KEY=sua-chave-service-role
+
+# Google Gemini AI (obtenha em aistudio.google.com)
+GEMINI_API_KEY=sua-chave-gemini
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+### 3. Configure o banco de dados Supabase
+
+1. Crie um projeto em [supabase.com](https://supabase.com)
+2. Vá em **SQL Editor**
+3. Execute o arquivo `supabase/schema.sql`
+
+### 4. Execute o projeto
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuração do Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Execute o SQL em `supabase/schema.sql` no SQL Editor do Supabase.
+Isso criará a tabela `scam_analyses`, índices e políticas RLS.
 
-## Learn More
+A aplicação funciona **sem Supabase** para análises. Sem as variáveis configuradas, o histórico é desabilitado mas as análises funcionam normalmente.
 
-To learn more about Next.js, take a look at the following resources:
+## Configuração do Gemini
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Acesse [aistudio.google.com](https://aistudio.google.com)
+2. Crie uma API Key
+3. Adicione ao `.env.local` como `GEMINI_API_KEY`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estrutura do projeto
 
-## Deploy on Vercel
+```
+/app
+  page.tsx                    — Landing page
+  /analisar/page.tsx          — Página de análise
+  /historico/page.tsx         — Histórico (requer auth)
+  /login/page.tsx             — Login
+  /cadastro/page.tsx          — Cadastro
+  /exemplos/page.tsx          — Exemplos de golpes
+  /sobre/page.tsx             — Sobre o projeto
+  /cai-em-golpe/page.tsx      — Guia pós-golpe
+  /api/analyze/route.ts       — API de análise (Gemini)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+/components
+  /layout                     — Header, Footer
+  /analyzer                   — Formulário, resultados, badges
+  /auth                       — Formulário de auth
+  /history                    — Tabela de histórico
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+/lib
+  gemini.ts                   — Integração Gemini
+  risk.ts                     — Utilitários de risco
+  validations.ts              — Schemas Zod
+  /supabase                   — Clientes Supabase
+
+/types/analysis.ts            — Tipos TypeScript
+/supabase/schema.sql          — SQL do banco de dados
+```
+
+## Scripts
+
+```bash
+npm run dev      # Desenvolvimento
+npm run build    # Build de produção
+npm run start    # Servidor de produção
+npm run lint     # Lint
+```
